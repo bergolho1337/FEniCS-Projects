@@ -15,11 +15,11 @@ def solve_problem (ndiv):
 	print_message(ndiv,h)
 	# _________________________________________________________________
 	# Create mesh and define function space
-	# Square mesh consist of 8 by 8 squares, where each square is divided in two triangles 
+	# Square mesh consist of ndiv by ndiv squares, where each square is divided in two triangles 
 	mesh = UnitSquareMesh(ndiv, ndiv)
 	# Create the finite element function space V
 	# Function space consist of standard Lagrange elements with degree 1
-	V = FunctionSpace(mesh, 'P', 1)
+	V = FunctionSpace(mesh, 'P', 2)
 
 	# __________________________________________________________________
 	# Define boundary condition
