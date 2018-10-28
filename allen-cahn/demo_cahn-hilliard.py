@@ -107,6 +107,7 @@
 # :py:mod:`dolfin` module are imported::
 
 import random
+import numpy as np
 from dolfin import *
 
 # .. index:: Expression
@@ -114,14 +115,27 @@ from dolfin import *
 # A class which will be used to represent the initial conditions is then
 # created::
 
+center_1 = np.array([0.3,0.5])
+center_2 = np.array([0.7,0.5])
+radius = 0.2
+
 # Class representing the intial conditions
 class InitialConditions(UserExpression):
     def __init__(self, **kwargs):
         random.seed(2 + MPI.rank(MPI.comm_world))
         super().__init__(**kwargs)
     def eval(self, values, x):
-        values[0] = 0.63 + 0.02*(0.5 - random.random())
+        dist_1 = np.linalg.norm(x-center_1)
+        dist_2 = np.linalg.norm(x-center_2)
+        if (dist_1 <= radius):
+            values[0] = 1.0
+        elif (dist_2 <= radius):
+            values[0] = 1.0
+        else:
+            values[0] = 0.0
         values[1] = 0.0
+        #values[0] = 0.63 + 0.02*(0.5 - random.random())
+        #values[1] = 0.0
     def value_shape(self):
         return (2,)
 
@@ -166,7 +180,7 @@ class CahnHilliardEquation(NonlinearProblem):
 # Next, various model parameters are defined::
 
 # Model parameters
-lmbda  = 1.0e-02  # surface parameter
+lmbda  = 5.0e-02  # surface parameter
 dt     = 5.0e-06  # time step
 theta  = 0.5      # time stepping family, e.g. theta=1 -> backward Euler, theta=0.5 -> Crank-Nicolson
 
@@ -316,7 +330,7 @@ solver.parameters["relative_tolerance"] = 1e-6
 # a terminal time :math:`T` is reached::
 
 # Output file
-file = File("output.pvd", "compressed")
+file = File("vtu/output.pvd", "compressed")
 
 # Step in time
 t = 0.0

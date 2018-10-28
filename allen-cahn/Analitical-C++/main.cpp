@@ -63,7 +63,7 @@ void write_solution_to_vtk (const double *u,\
         char filename[50];
         
         // Write the transmembrane potential
-        sprintf(filename,"VTK/sol%d.vtk",k);
+        sprintf(filename,"vtk/sol%d.vtk",k);
         file = fopen(filename,"w+");
         fprintf(file,"# vtk DataFile Version 3.0\n");
         fprintf(file,"Monodomain MVF\n");

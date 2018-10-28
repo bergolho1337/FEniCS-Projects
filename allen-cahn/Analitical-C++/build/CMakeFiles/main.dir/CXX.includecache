@@ -1,0 +1,18 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/bergolho/Documentos/Github/FEniCS-Projects/allen-cahn/Analitical-C++/main.cpp
+iostream
+-
+cstdio
+-
+cstdlib
+-
+cmath
+-
+

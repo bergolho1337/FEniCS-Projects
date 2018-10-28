@@ -1,0 +1,3 @@
+/home/bergolho/Documentos/Github/FEniCS-Projects/allen-cahn/Analitical-C++/build/CMakeFiles/rebuild_cache.dir
+/home/bergolho/Documentos/Github/FEniCS-Projects/allen-cahn/Analitical-C++/build/CMakeFiles/main.dir
+/home/bergolho/Documentos/Github/FEniCS-Projects/allen-cahn/Analitical-C++/build/CMakeFiles/edit_cache.dir
