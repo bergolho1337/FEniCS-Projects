@@ -12,13 +12,13 @@ def buildCircles (init_pos,d,n_circles,radius):
         centers.append(center)
     return np.array(centers)
 
-n_circles_1 = 5
+n_circles_1 = 2
 radius_1 = 0.1
 init_pos_1 = [0.1,0.5]
 d_1 = [1.0,0.0]
 centers_1 = buildCircles(init_pos_1,d_1,n_circles_1,radius_1)
 
-n_circles_2 = 5
+n_circles_2 = 0
 radius_2 = 0.1
 init_pos_2 = [0.5,0.1]
 d_2 = [0.0,1.0]
@@ -118,7 +118,7 @@ file = File("vtu/output.pvd", "compressed")
 # Time-stepping
 u = Function(V)
 t = 0.0
-T = 400.0*dt
+T = 200.0*dt
 while (t < T):
     print("Time = %.10lf" % t)
 
