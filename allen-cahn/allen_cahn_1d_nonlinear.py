@@ -1,3 +1,23 @@
+# ============================================================================================================
+# Program that solves the 1-D Allen-Cahn equation using the FEniCS library.
+# ------------------------------------------------------------------------------------------------------------
+# All the output files for pos-processing (error analysis, etc ...) are being store over the 'output' folder.
+# ------------------------------------------------------------------------------------------------------------
+# This program uses the NewtonMethod to solve the nonlinear system of equations that appear when we apply 
+# a variable substitution over the term related to the Laplacian operator. 
+# (For more information about the solution steps read the 'solution_guide.pdf' file).
+# ------------------------------------------------------------------------------------------------------------
+# Another feature of the program is the comparison between the approximate and analitical solutions. The user
+# needs to specify a timestep as a reference for the plot that overlaps the two solutions then a 'pdf' file
+# will be generated at the 'output' folder with the name 'comparison.pdf'. 
+# ------------------------------------------------------------------------------------------------------------
+# Furthermore, the program also generates two files 'aprox.dat' and 'analit.dat' that represents the 
+# approximate and analitical solution respectevely.
+# ------------------------------------------------------------------------------------------------------------
+# Remember to clean up the files from the 'vtu' folder when you are going to do another simulation. Use the
+# script 'clean_previous_results.sh' to do this.
+# ============================================================================================================
+ 
 import random
 import numpy as np
 import matplotlib.pyplot as plt
@@ -7,17 +27,18 @@ from dolfin import *
 # Model parameters
 lmbda  = 5.0e-02    # Surface parameter
 dt     = 5.0e-03    # Time step
+tmax = 2.5          # Maximum time of the simulation
 theta  = 0.5        # Time stepping family, e.g. theta=1 -> backward Euler, theta=0.5 -> Crank-Nicolson
 M = 1.0             # Diffusive factor
-xmin = -2.0         # Limits of the interval
-xmax = 2.0          # Limits of the interval
-nelem = 100         # Number of finite elements to use
+xmin = 0.0         # Limits of the interval
+xmax = 4.0          # Limits of the interval
+nelem = 16         # Number of finite elements to use
 w0 = 0.5            # Weight related to the free-energy density
 w1 = 0.0            # Weight related to the free-energy density
-n_timesteps = 500   # Number of timesteps
-timestep_plot = 250 # Timestep of the plot
+timestep_plot = 200 # Timestep of the plot
+print_rate = 10     # Rate which the VTU file will be saved
 
-# Class representing the intial conditions
+# Class representing the initial conditions
 class InitialConditions(UserExpression):
     def __init__(self, **kwargs):
         random.seed(2 + MPI.rank(MPI.comm_world))
@@ -40,6 +61,7 @@ class AllenCahnEquation(NonlinearProblem):
         assemble(self.a, tensor=A)
 
 def compute_aproximation ():
+    print("[!] Computing approximate solution ...")
 
     # Form compiler options
     parameters["form_compiler"]["optimize"]     = True
@@ -97,29 +119,41 @@ def compute_aproximation ():
     aprox_file = open("output/aprox.dat","w")
 
     # Step in time
-    t = 0.0
-    T = n_timesteps*dt
-    while (t < T):
-        t += dt
+    k = 0
+    n_timesteps = int(tmax/dt)
+    while (k <= n_timesteps):
+        t = dt*k
+        print("Timestep: t = %g" % t)
+
+        # Get the reference of the variable 'u' from the PDE system
         u0.vector()[:] = u.vector()
         solver.solve(problem, u.vector())
 
-        file << (u.split()[0], t)
+        # Save VTU when we reach the a multiple of the 'print_rate'
+        if (k % print_rate == 0):
+            file << (u.split()[0], t)
+
+        # Save current solution to the aproximation file
         vertex_values_u = u.split()[0].compute_vertex_values(mesh)
         aprox_file.write("%g " % t)
         for i in range(len(vertex_values_u)-1):
             aprox_file.write("%g " % vertex_values_u[i])
         aprox_file.write("%g\n" % vertex_values_u[len(vertex_values_u)-1])
+
+        # Next timestep
+        k = k + 1
     aprox_file.close()
 
 def compute_analitical ():
+    print("[!] Computing analitical solution ...")
+
     analit_file = open("output/analit.dat","w")
     x = np.linspace(xmin,xmax,nelem+1)
-    t = 0.0
-    T = n_timesteps*dt
-    while (t < T):
+    k = 0
+    n_timesteps = int(tmax/dt)
+    while (k <= n_timesteps):
 
-        t += dt
+        t = dt*k
 
         analit_file.write("%g " % t)
         for i in range(len(x)-1):
@@ -131,12 +165,11 @@ def compute_analitical ():
         v = np.sqrt(2.0*lmbda)*f_bar
         y = (1.0 - np.tanh( (x[len(x)-1] - v*t)/(2.0 * np.sqrt(2.0*lmbda)) )) / 2.0
         analit_file.write("%g\n" % y)
+        k = k + 1
 
     analit_file.close()
 
 def compare_analitical_aproximation ():
-    # Specify the timestep to plot
-    timestep_plot = 200
     
     # Get the data
     data_analit = np.genfromtxt("output/analit.dat")
@@ -155,6 +188,9 @@ def compare_analitical_aproximation ():
     #plt.show()
 
 def main ():
+    # Supressing outputs from the solver
+    set_log_level(50)
+
     compute_aproximation()
     compute_analitical()
     compare_analitical_aproximation()
