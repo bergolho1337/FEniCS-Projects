@@ -7,15 +7,17 @@ from dolfin import *
 # Model parameters
 lmbda  = 5.0e-02    # Surface parameter
 dt     = 5.0e-03    # Time step
+tmax   = 2.5
 theta  = 0.5        # Time stepping family, e.g. theta=1 -> backward Euler, theta=0.5 -> Crank-Nicolson
 M = 1.0             # Diffusive factor
 xmin = -2.0         # Limits of the interval
 xmax = 2.0          # Limits of the interval
-nelem = 100         # Number of finite elements to use
-w0 = 0.5            # Weight related to the free-energy density
+#nelem = 4         # Number of finite elements to use
+w0 = 0.0            # Weight related to the free-energy density
 w1 = 0.0            # Weight related to the free-energy density
 n_timesteps = 500   # Number of timesteps
-timestep_plot = 250 # Timestep of the plot
+ref_timestep = 2    # Reference timestep for error calculation
+n_simulations = 3   # Number of simulations
 
 # Class representing the intial conditions
 class InitialConditions(UserExpression):
@@ -39,7 +41,9 @@ class AllenCahnEquation(NonlinearProblem):
     def J(self, A, x):
         assemble(self.a, tensor=A)
 
-def compute_aproximation ():
+def solve_problem (nelem):
+
+    start_h = float((xmax-xmin)/nelem)
 
     # Form compiler options
     parameters["form_compiler"]["optimize"]     = True
@@ -47,8 +51,12 @@ def compute_aproximation ():
 
     # Create mesh and build function space
     mesh = IntervalMesh(nelem,xmin,xmax)
-    P1 = FiniteElement("Lagrange",mesh.ufl_cell(),1)
+    P1 = FiniteElement("Lagrange",mesh.ufl_cell(),2)
     ME = FunctionSpace(mesh,P1*P1)
+
+    # Define analitical solution
+    u_analit = Expression('(1.0 - tanh( (x[0] - (sqrt(2.0*lmbda)*(6.0*(w0 - w1)))*t)/(2.0 * sqrt(2.0*lmbda)) )) / 2.0',
+                 degree=2, lmbda=lmbda, w0=w0, w1=w1, t=0)
 
     # Define trial and test functions
     du    = TrialFunction(ME)
@@ -93,71 +101,37 @@ def compute_aproximation ():
     solver.parameters["relative_tolerance"] = 1e-6
 
     # Output file
-    file = File("vtu/output.pvd", "compressed")
-    aprox_file = open("output/aprox.dat","w")
+    #file = File("vtu/output.pvd", "compressed")
 
     # Step in time
-    t = 0.0
-    T = n_timesteps*dt
-    while (t < T):
-        t += dt
+    k = 0
+    T = tmax
+    while (k <= n_timesteps):
+        t = k*dt
+
         u0.vector()[:] = u.vector()
         solver.solve(problem, u.vector())
 
-        file << (u.split()[0], t)
-        vertex_values_u = u.split()[0].compute_vertex_values(mesh)
-        aprox_file.write("%g " % t)
-        for i in range(len(vertex_values_u)-1):
-            aprox_file.write("%g " % vertex_values_u[i])
-        aprox_file.write("%g\n" % vertex_values_u[len(vertex_values_u)-1])
-    aprox_file.close()
-
-def compute_analitical ():
-    analit_file = open("output/analit.dat","w")
-    x = np.linspace(xmin,xmax,nelem+1)
-    t = 0.0
-    T = n_timesteps*dt
-    while (t < T):
-
-        t += dt
-
-        analit_file.write("%g " % t)
-        for i in range(len(x)-1):
-            f_bar = 6.0*(w0 - w1)
-            v = np.sqrt(2.0*lmbda)*f_bar
-            y = (1.0 - np.tanh( (x[i] - v*t)/(2.0 * np.sqrt(2.0*lmbda)) )) / 2.0
-            analit_file.write("%g " % y)
-        f_bar = 6.0*(w0 - w1)
-        v = np.sqrt(2.0*lmbda)*f_bar
-        y = (1.0 - np.tanh( (x[len(x)-1] - v*t)/(2.0 * np.sqrt(2.0*lmbda)) )) / 2.0
-        analit_file.write("%g\n" % y)
-
-    analit_file.close()
-
-def compare_analitical_aproximation ():
-    # Specify the timestep to plot
-    timestep_plot = 200
-    
-    # Get the data
-    data_analit = np.genfromtxt("output/analit.dat")
-    data_aprox = np.genfromtxt("output/aprox.dat")
-    x = np.linspace(xmin,xmax,nelem+1)
-
-    plt.clf()
-    plt.grid()
-    plt.plot(x,data_analit[timestep_plot][1:],label="analit",c="red")
-    plt.plot(x,data_aprox[timestep_plot][1:],label="aprox",c="blue",linestyle='--')
-    plt.xlabel("x",fontsize=15)
-    plt.ylabel("u",fontsize=15)
-    plt.title("Analitical x Aproximation (t = %g)" % timestep_plot,fontsize=14)
-    plt.legend(loc=0,fontsize=14)
-    plt.savefig("output/comparison.pdf")
-    #plt.show()
+        #file << (u.split()[0], t)
+        #vertex_values_u = u.split()[0].compute_vertex_values(mesh)
+        
+        # Compute error in L2 norm
+        if (k == ref_timestep):
+            error_L2 = errornorm(u_analit, u.split()[0], 'L2')
+        
+        k = k + 1
+    return start_h, error_L2
 
 def main ():
-    compute_aproximation()
-    compute_analitical()
-    compare_analitical_aproximation()
+    error_file = open("output/l2_error.dat","w")
+    # Starting number of elements
+    nelem = 1
+    
+    for k in range(n_simulations):
+        h, error_L2 = solve_problem(nelem)
+        error_file.write("%g %g\n" % (h,error_L2))
+        nelem = nelem * 2
+    error_file.close()
 
 if __name__ == "__main__":
     main()
