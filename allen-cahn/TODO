@@ -1,0 +1,3 @@
+- "allen_cahn_1d_nonlinear" seems to be working.
+- Fix "allen_cahn_1d_error" script and generate the L2-norm error plots.
+- Fix "allen_cahn_2d" script

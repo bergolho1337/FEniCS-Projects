@@ -25,44 +25,44 @@ from mpl_toolkits.mplot3d import Axes3D
 from dolfin import *
 
 # Model parameters
-#lmbda  = 5.0e-02    # Surface parameter
 lmbda  = 5.0e-02    # Surface parameter
 dt     = 1.0e-03    # Time step
-tmax = 10.0          # Maximum time of the simulation
+tmax = 1.0          # Maximum time of the simulation
 theta  = 0.5        # Time stepping family, e.g. theta=1 -> backward Euler, theta=0.5 -> Crank-Nicolson
 M = 1.0             # Diffusive factor
-xmin = -2.0         # Limits of the interval
-xmax = 2.0          # Limits of the interval
-nelem = 64         # Number of finite elements to use
-w0 = 0.5            # Weight related to the free-energy density
+nelem = 100         # Number of finite elements to use
+w0 = 1.0            # Weight related to the free-energy density
 w1 = 0.0            # Weight related to the free-energy density
-timestep_plot = 9999 # Timestep of the plot
 print_rate = 10     # Rate which the VTU file will be saved
 
-# Class representing the initial conditions
-# Type 1 = Analitical solution
-class InitialConditions_Type1(UserExpression):
-    def __init__(self, **kwargs):
-        random.seed(2 + MPI.rank(MPI.comm_world))
-        super().__init__(**kwargs)
-    def eval(self, values, x):
-        values[0] = ( 1.0 - np.tanh(x / (2.0*np.sqrt(2.0*lmbda))) ) / 2.0
-        values[1] = 0.0
-    def value_shape(self):
-        return (2,)
+# Build circles function
+def buildCircles (init_pos,d,n_circles,radius):
+    centers = []
+    for i in range(n_circles):
+        x = init_pos[0] + d[0]*2*i*radius
+        y = init_pos[1] + d[1]*2*i*radius
+        center = [x,y]
+        centers.append(center)
+    return np.array(centers)
+
+# Circles configuration parameters
+n_circles_1 = 1
+radius_1 = 0.1
+init_pos_1 = [0.5,0.5]
+d_1 = [1.0,0.0]
+centers_1 = buildCircles(init_pos_1,d_1,n_circles_1,radius_1)
 
 # Class representing the initial conditions
-# Type 2 = Single pulse
-class InitialConditions_Type2(UserExpression):
+class InitialConditions(UserExpression):
     def __init__(self, **kwargs):
         random.seed(2 + MPI.rank(MPI.comm_world))
         super().__init__(**kwargs)
     def eval(self, values, x):
-        if (x <= 0.5):
-            values[0] = 1.0
-        else:
-            values[0] = 0.0
-        #values[0] = ( 1.0 - np.tanh(x / (2.0*np.sqrt(2.0*lmbda))) ) / 2.0
+        values[0] = 0.0
+        for i in range(n_circles_1):
+            dist = np.linalg.norm(x-centers_1[i])
+            if (dist <= radius_1):
+                values[0] = 1.0
         values[1] = 0.0
     def value_shape(self):
         return (2,)
@@ -86,7 +86,7 @@ def compute_aproximation ():
     parameters["form_compiler"]["cpp_optimize"] = True
 
     # Create mesh and build function space
-    mesh = IntervalMesh(nelem,xmin,xmax)
+    mesh = UnitSquareMesh(nelem,nelem)
     P1 = FiniteElement("Lagrange",mesh.ufl_cell(),1)
     ME = FunctionSpace(mesh,P1*P1)
 
@@ -104,7 +104,7 @@ def compute_aproximation ():
     c0, mu0 = split(u0)
 
     # Create intial conditions and interpolate
-    u_init = InitialConditions_Type1()
+    u_init = InitialConditions()
     u.interpolate(u_init)
     u0.interpolate(u_init)
 
@@ -119,7 +119,7 @@ def compute_aproximation ():
 
     # Weak statement of the equations
     L0 = c*q*dx - c0*q*dx - dt*mu_mid*q*dx
-    L1 = mu*v*dx + dfdc*v*dx + lmbda*dot(grad(c),grad(v))*dx
+    L1 = mu*v*dx + dfdc*v*dx + lmbda*dot(c,v)*dx
     L = L0 + L1
 
     # Compute directional derivative about u in the direction of du (Jacobian)
@@ -134,7 +134,6 @@ def compute_aproximation ():
 
     # Output file
     file = File("vtu/output.pvd", "compressed")
-    aprox_file = open("output/aprox.dat","w")
 
     # Step in time
     k = 0
@@ -151,88 +150,14 @@ def compute_aproximation ():
         if (k % print_rate == 0):
             file << (u.split()[0], t)
 
-        # Save current solution to the aproximation file
-        vertex_values_u = u.split()[0].compute_vertex_values(mesh)
-        aprox_file.write("%g " % t)
-        for i in range(len(vertex_values_u)-1):
-            aprox_file.write("%g " % vertex_values_u[i])
-        aprox_file.write("%g\n" % vertex_values_u[len(vertex_values_u)-1])
-
         # Next timestep
         k = k + 1
-    aprox_file.close()
-
-def compute_analitical ():
-    print("[!] Computing analitical solution ...")
-
-    analit_file = open("output/analit.dat","w")
-    x = np.linspace(xmin,xmax,nelem+1)
-    k = 0
-    n_timesteps = int(tmax/dt)
-    while (k <= n_timesteps):
-
-        t = dt*k
-
-        analit_file.write("%g " % t)
-        for i in range(len(x)-1):
-            f_bar = 6.0*(w0 - w1)
-            v = np.sqrt(2.0*lmbda)*f_bar
-            y = (1.0 - np.tanh( (x[i] - v*t)/(2.0 * np.sqrt(2.0*lmbda)) )) / 2.0
-            analit_file.write("%g " % y)
-        f_bar = 6.0*(w0 - w1)
-        v = np.sqrt(2.0*lmbda)*f_bar
-        y = (1.0 - np.tanh( (x[len(x)-1] - v*t)/(2.0 * np.sqrt(2.0*lmbda)) )) / 2.0
-        analit_file.write("%g\n" % y)
-        k = k + 1
-
-    analit_file.close()
-
-def plot_timestep (x,data_analit,data_aprox,timestep_plot):
-    plt.plot(x,data_aprox[timestep_plot][1:],label="aprox-%d" % timestep_plot,linestyle='--')
-
-def compare_aproximation_timesteps ():
-    
-    # Get the data
-    data_analit = np.genfromtxt("output/analit.dat")
-    data_aprox = np.genfromtxt("output/aprox.dat")
-    x = np.linspace(xmin,xmax,nelem+1)
-    timesteps = [1,100,1000,9999]
-
-    for k in range(len(timesteps)):
-        plot_timestep(x,data_analit,data_aprox,timesteps[k])
-    plt.grid()
-    plt.xlabel("x",fontsize=15)
-    plt.ylabel("u",fontsize=15)
-    plt.title("Analitical x Aproximation",fontsize=14)
-    plt.legend(loc=0,fontsize=14)
-    plt.savefig("output/timesteps.pdf")
-
-def compare_aproximation_analitical ():
-    
-    # Get the data
-    data_analit = np.genfromtxt("output/analit.dat")
-    data_aprox = np.genfromtxt("output/aprox.dat")
-    x = np.linspace(xmin,xmax,nelem+1)
-    t = dt*timestep_plot
-
-    plt.clf()
-    plt.plot(x,data_analit[timestep_plot][1:],label="analit",c="red")
-    plt.plot(x,data_aprox[timestep_plot][1:],label="aprox-%d" % timestep_plot,linestyle='--')
-    plt.grid()
-    plt.xlabel("x",fontsize=15)
-    plt.ylabel("u",fontsize=15)
-    plt.title("Analitical x Aproximation (t = %g)" % t,fontsize=14)
-    plt.legend(loc=0,fontsize=14)
-    plt.savefig("output/comparison.pdf")
 
 def main ():
     # Supressing outputs from the solver
     set_log_level(50)
 
     compute_aproximation()
-    compute_analitical()
-    compare_aproximation_timesteps()
-    compare_aproximation_analitical()
-
+    
 if __name__ == "__main__":
     main()
