@@ -28,15 +28,15 @@ from dolfin import *
 #lmbda  = 5.0e-02    # Surface parameter
 lmbda  = 5.0e-02    # Surface parameter
 dt     = 1.0e-03    # Time step
-tmax = 10.0          # Maximum time of the simulation
+tmax = 2.0          # Maximum time of the simulation
 theta  = 0.5        # Time stepping family, e.g. theta=1 -> backward Euler, theta=0.5 -> Crank-Nicolson
 M = 1.0             # Diffusive factor
-xmin = -2.0         # Limits of the interval
-xmax = 2.0          # Limits of the interval
+xmin = 0.0         # Limits of the interval
+xmax = 4.0          # Limits of the interval
 nelem = 64         # Number of finite elements to use
 w0 = 0.5            # Weight related to the free-energy density
 w1 = 0.0            # Weight related to the free-energy density
-timestep_plot = 9999 # Timestep of the plot
+timestep_plot = 2000 # Timestep of the plot
 print_rate = 10     # Rate which the VTU file will be saved
 
 # Class representing the initial conditions
@@ -196,7 +196,7 @@ def compare_aproximation_timesteps ():
     data_analit = np.genfromtxt("output/analit.dat")
     data_aprox = np.genfromtxt("output/aprox.dat")
     x = np.linspace(xmin,xmax,nelem+1)
-    timesteps = [1,100,1000,9999]
+    timesteps = [1,100,1000,1999]
 
     for k in range(len(timesteps)):
         plot_timestep(x,data_analit,data_aprox,timesteps[k])
@@ -221,6 +221,7 @@ def compare_aproximation_analitical ():
     plt.grid()
     plt.xlabel("x",fontsize=15)
     plt.ylabel("u",fontsize=15)
+    plt.ylim([0,1])
     plt.title("Analitical x Aproximation (t = %g)" % t,fontsize=14)
     plt.legend(loc=0,fontsize=14)
     plt.savefig("output/comparison.pdf")
