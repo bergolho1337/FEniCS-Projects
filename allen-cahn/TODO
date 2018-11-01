@@ -1,3 +1,9 @@
-- "allen_cahn_1d_nonlinear" seems to be working.
-- Fix "allen_cahn_1d_error" script and generate the L2-norm error plots.
-- Fix "allen_cahn_2d" script
+- Test the L2 norm script with the 1D-Poisson equation
+
+- Write the whole formulation of the Allen-Cahn equation on file.
+
+- Build the convergeance error graphic
+	- Make 4 simulations 
+	- nelem = {4,8,16,32}
+	- Calculate the coefficient using the last two points of the simulations
+	 

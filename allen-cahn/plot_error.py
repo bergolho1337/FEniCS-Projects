@@ -8,7 +8,9 @@ def calc_error (argv):
 
     log_h = np.log10(data[:,0])
     log_E = np.log10(data[:,1])
-    coeff = np.polyfit(log_h,log_E,1)
+    n = len(log_h)
+    
+    coeff = np.polyfit(log_h[n-2:],log_E[n-2:],1)
     a = coeff[0]
     b = coeff[1]
     print("Error function")

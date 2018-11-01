@@ -14,7 +14,7 @@ xmin = -2.0         # Limits of the interval
 xmax = 2.0          # Limits of the interval
 w0 = 0.0            # Weight related to the free-energy density
 w1 = 0.0            # Weight related to the free-energy density
-error_timestep = 2    # Reference timestep for error calculation
+error_timestep = 1    # Reference timestep for error calculation
 n_simulations = 6   # Number of simulations
 
 # Class representing the intial conditions
@@ -50,7 +50,7 @@ def solve_problem (nelem):
 
     # Create mesh and build function space
     mesh = IntervalMesh(nelem,xmin,xmax)
-    P1 = FiniteElement("Lagrange",mesh.ufl_cell(),1)
+    P1 = FiniteElement("CG",mesh.ufl_cell(),1)
     ME = FunctionSpace(mesh,P1*P1)
 
     # Define analitical solution
@@ -128,7 +128,7 @@ def main ():
 
     error_file = open("output/l2_error.dat","w")
     # Starting number of elements
-    nelem = 2
+    nelem = 4
     
     for k in range(n_simulations):
         h, error_L2 = solve_problem(nelem)
