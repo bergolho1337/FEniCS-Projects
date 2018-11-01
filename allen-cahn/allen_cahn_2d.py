@@ -1,18 +1,9 @@
 # ============================================================================================================
-# Program that solves the 1-D Allen-Cahn equation using the FEniCS library.
-# ------------------------------------------------------------------------------------------------------------
-# All the output files for pos-processing (error analysis, etc ...) are being store over the 'output' folder.
+# Program that solves the 2-D Allen-Cahn equation using the FEniCS library.
 # ------------------------------------------------------------------------------------------------------------
 # This program uses the NewtonMethod to solve the nonlinear system of equations that appear when we apply 
 # a variable substitution over the term related to the Laplacian operator. 
 # (For more information about the solution steps read the 'solution_guide.pdf' file).
-# ------------------------------------------------------------------------------------------------------------
-# Another feature of the program is the comparison between the approximate and analitical solutions. The user
-# needs to specify a timestep as a reference for the plot that overlaps the two solutions then a 'pdf' file
-# will be generated at the 'output' folder with the name 'comparison.pdf'. 
-# ------------------------------------------------------------------------------------------------------------
-# Furthermore, the program also generates two files 'aprox.dat' and 'analit.dat' that represents the 
-# approximate and analitical solution respectevely.
 # ------------------------------------------------------------------------------------------------------------
 # Remember to clean up the files from the 'vtu' folder when you are going to do another simulation. Use the
 # script 'clean_previous_results.sh' to do this.
@@ -30,8 +21,8 @@ dt     = 1.0e-03    # Time step
 tmax = 1.0          # Maximum time of the simulation
 theta  = 0.5        # Time stepping family, e.g. theta=1 -> backward Euler, theta=0.5 -> Crank-Nicolson
 M = 1.0             # Diffusive factor
-nelem = 100         # Number of finite elements to use
-w0 = 1.0            # Weight related to the free-energy density
+nelem = 128         # Number of finite elements to use
+w0 = 0.0            # Weight related to the free-energy density
 w1 = 0.0            # Weight related to the free-energy density
 print_rate = 10     # Rate which the VTU file will be saved
 
@@ -46,9 +37,9 @@ def buildCircles (init_pos,d,n_circles,radius):
     return np.array(centers)
 
 # Circles configuration parameters
-n_circles_1 = 1
-radius_1 = 0.1
-init_pos_1 = [0.5,0.5]
+n_circles_1 = 2
+radius_1 = 0.2
+init_pos_1 = [0.3,0.5]
 d_1 = [1.0,0.0]
 centers_1 = buildCircles(init_pos_1,d_1,n_circles_1,radius_1)
 
@@ -119,7 +110,7 @@ def compute_aproximation ():
 
     # Weak statement of the equations
     L0 = c*q*dx - c0*q*dx - dt*mu_mid*q*dx
-    L1 = mu*v*dx + dfdc*v*dx + lmbda*dot(c,v)*dx
+    L1 = mu*v*dx + dfdc*v*dx + lmbda*dot(grad(c),grad(v))*dx
     L = L0 + L1
 
     # Compute directional derivative about u in the direction of du (Jacobian)
@@ -133,7 +124,7 @@ def compute_aproximation ():
     solver.parameters["relative_tolerance"] = 1e-6
 
     # Output file
-    file = File("vtu/output.pvd", "compressed")
+    file = File("vtu/output-2d.pvd", "compressed")
 
     # Step in time
     k = 0
