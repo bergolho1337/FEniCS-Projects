@@ -71,7 +71,7 @@ def solve_BVP (argv):
     V = FunctionSpace(mesh,"CG",degree)
 
     # Define the boundary condition function
-    u_D = Expression('sin(x[0]) / exp(x[0])', degree=3)
+    u_D = Expression('sin(x[0]) / exp(x[0])', degree=1)
 
     def boundary(x, on_boundary):
             return on_boundary
@@ -81,7 +81,7 @@ def solve_BVP (argv):
     # Define variational problem
     u = TrialFunction(V)
     v = TestFunction(V)
-    f = Expression('2*cos(x[0])/exp(x[0])',degree=2)
+    f = Expression('2*cos(x[0])/exp(x[0])',degree=1)
 
     # Bilinear and linear formulas
     a = dot(grad(u),grad(v))*dx

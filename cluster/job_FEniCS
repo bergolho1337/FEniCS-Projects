@@ -1,0 +1,15 @@
+#!/bin/bash
+#$ -pe threaded 1
+#$ -N mythreadjob
+#$ -cwd
+#$ -j y
+#$ -S /bin/bash
+echo "NHOSTS=$NHOSTS, NSLOTS=$NSLOTS"
+
+export PETSC_DIR=/share/apps/petsc
+export PETSC_ARCH=arch-linux2-c-debug
+export LD_LIBRARY_PATH=/share/apps/SuiteSparse/lib/:/share/apps/python/lib/:/share/apps/cuda/lib64/:/opt/mpich3/gnu/lib/:/share/apps/petsc/lib/:/share/apps/hdf5-1.10.3/lib:/share/apps/petsc/lib:/share/apps/sundials-3.1.2/lib/:/share/apps/scotch_6.0.6/lib/:/share/apps/OpenBLAS/lib/:/share/apps/blas/BLAS/:$LD_LIBRARY_PATH
+
+source /share/apps/dolfin/build/dolfin.conf
+
+/share/apps/Python-3.7.0/bin/python3 /home/berg/FEniCS-Projects/Simple-Poisson/demo_poisson1D.py
