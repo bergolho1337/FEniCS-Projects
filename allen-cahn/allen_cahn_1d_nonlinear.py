@@ -27,16 +27,16 @@ from dolfin import *
 # Model parameters
 #lmbda  = 5.0e-02    # Surface parameter
 lmbda  = 5.0e-02    # Surface parameter
-dt     = 1.0e-03    # Time step
+dt     = 1.0e-04    # Time step
 tmax = 2.0          # Maximum time of the simulation
 theta  = 0.5        # Time stepping family, e.g. theta=1 -> backward Euler, theta=0.5 -> Crank-Nicolson
 M = 1.0             # Diffusive factor
-xmin = 0.0         # Limits of the interval
-xmax = 4.0          # Limits of the interval
-nelem = 64         # Number of finite elements to use
-w0 = 0.5            # Weight related to the free-energy density
+xmin = -2.0         # Limits of the interval
+xmax = 2.0          # Limits of the interval
+nelem = 32         # Number of finite elements to use
+w0 = 0.05            # Weight related to the free-energy density
 w1 = 0.0            # Weight related to the free-energy density
-timestep_plot = 2000 # Timestep of the plot
+timestep_plot = 0 # Timestep of the plot
 print_rate = 10     # Rate which the VTU file will be saved
 
 # Class representing the initial conditions
@@ -187,25 +187,47 @@ def compute_analitical ():
 
     analit_file.close()
 
-def plot_timestep (x,data_analit,data_aprox,timestep_plot):
+def plot_aprox_timestep (x,data_aprox,timestep_plot):
     plt.plot(x,data_aprox[timestep_plot][1:],label="aprox-%d" % timestep_plot,linestyle='--')
+
+def plot_analit_timestep (x,data_analit,timestep_plot):
+    plt.plot(x,data_analit[timestep_plot][1:],label="analit-%d" % timestep_plot,linestyle='-')
 
 def compare_aproximation_timesteps ():
     
     # Get the data
-    data_analit = np.genfromtxt("output/analit.dat")
     data_aprox = np.genfromtxt("output/aprox.dat")
     x = np.linspace(xmin,xmax,nelem+1)
-    timesteps = [1,100,1000,1999]
+    #timesteps = [1,100,1000,1999]
+    timesteps = [1,1000,10000,19999]
 
     for k in range(len(timesteps)):
-        plot_timestep(x,data_analit,data_aprox,timesteps[k])
+        plot_aprox_timestep(x,data_aprox,timesteps[k])
     plt.grid()
     plt.xlabel("x",fontsize=15)
     plt.ylabel("u",fontsize=15)
-    plt.title("Analitical x Aproximation",fontsize=14)
+    plt.title("Aproximation Timesteps",fontsize=14)
     plt.legend(loc=0,fontsize=14)
-    plt.savefig("output/timesteps.pdf")
+    plt.savefig("output/aprox_timesteps.pdf")
+
+def compare_analitical_timesteps ():
+    
+    # Get the data
+    data_analit = np.genfromtxt("output/analit.dat")
+    x = np.linspace(xmin,xmax,nelem+1)
+    #timesteps = [1,100,1000,1999]
+    timesteps = [1,1000,10000,19999]
+
+    plt.clf()
+    for k in range(len(timesteps)):
+        plot_analit_timestep(x,data_analit,timesteps[k])
+    plt.grid()
+    plt.xlabel("x",fontsize=15)
+    plt.ylabel("u",fontsize=15)
+    plt.title("Analitical Timesteps",fontsize=14)
+    plt.legend(loc=0,fontsize=14)
+    plt.savefig("output/analit_timesteps.pdf")
+
 
 def compare_aproximation_analitical ():
     
@@ -233,7 +255,8 @@ def main ():
     compute_aproximation()
     compute_analitical()
     compare_aproximation_timesteps()
-    compare_aproximation_analitical()
+    compare_analitical_timesteps()
+    #compare_aproximation_analitical()
 
 if __name__ == "__main__":
     main()
