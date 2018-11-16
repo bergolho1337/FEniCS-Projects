@@ -5,17 +5,15 @@ import random
 import numpy as np
 
 # Allen-Cahn equation parameters
-lmbda  = 5.0e-02    # Surface parameter
-dt     = 1.0e-03    # Time step
+lmbda  = 1.0e-02    # Surface parameter
+#dt     = 1.0e-03    # Time step
 tmax = 2.0          # Maximum time of the simulation
 theta  = 0.5        # Time stepping family, e.g. theta=1 -> backward Euler, theta=0.5 -> Crank-Nicolson
 M = 1.0             # Diffusive factor
 xmin = -2.0         # Limits of the interval
 xmax = 2.0          # Limits of the interval
-#nelem = 64         # Number of finite elements to use
 w0 = 0.0            # Weight related to the free-energy density
 w1 = 0.0            # Weight related to the free-energy density
-#timestep_plot = 2000 # Timestep of the plot
 print_rate = 10     # Rate which the VTU file will be saved
 
 # Class representing the initial conditions
@@ -71,7 +69,7 @@ def run_unitary_test (toler,degrees):
         print("|| a = %.10lf || a_ref = %.10lf || diff = %.10lf || toler = %.10lf" % (a,a_ref,diff,toler))
         print("------------------------------------------------------------------------------------")
 
-def solve_allen_cahn (nelem,degree,error_timestep):
+def solve_allen_cahn (nelem,degree,error_timestep,dt):
 
     start_h = float((xmax-xmin)/nelem)
 
@@ -85,7 +83,7 @@ def solve_allen_cahn (nelem,degree,error_timestep):
     ME = FunctionSpace(mesh,P1*P1)
 
     # Define analitical solution
-    u_analit = Expression('(1.0 - tanh( (x[0] - (sqrt(2.0*lmbda)*(6.0*(w0 - w1)))*t)/(2.0 * sqrt(2.0*lmbda)) )) / 2.0',
+    u_analit = Expression('(1.0 - tanh( (x[0] - ( sqrt(2.0*lmbda)*(6.0*(w0 - w1)))*t )/(2.0 * sqrt(2.0*lmbda)) )) / 2.0',
                  degree=degree, lmbda=lmbda, w0=w0, w1=w1, t=0)
 
     # Define trial and test functions
@@ -128,7 +126,7 @@ def solve_allen_cahn (nelem,degree,error_timestep):
     solver = NewtonSolver()
     solver.parameters["linear_solver"] = "lu"
     solver.parameters["convergence_criterion"] = "incremental"
-    solver.parameters["relative_tolerance"] = 1e-6
+    solver.parameters["relative_tolerance"] = 1e-10
 
     # Output file
     #file = File("vtu/output.pvd", "compressed")
@@ -146,25 +144,29 @@ def solve_allen_cahn (nelem,degree,error_timestep):
         #file << (u.split()[0], t)
         #vertex_values_u = u.split()[0].compute_vertex_values(mesh)
         
-        # Compute error in L2 norm
-        if (k == error_timestep):
+        # Compute error in L2 norm at the 'error_timestep'
+        if ( (t-error_timestep) <= 1.0e-10):
             error_L2 = errornorm(u_analit, u.split()[0], 'L2')
         
         k = k + 1
     return start_h, error_L2
 
-def run_simulations (nelem,nsimulations,error_timestep,degrees):
+def run_simulations (nelem,nsimulations,error_timestep,degrees,min_h):
     # Run the simulations for each degree of the Continuous Galerkin elements
     for degree in degrees:
         print("*****************************************************************************")
         print("[!] Running tests with Continous Galerkin Elements (degree = %d)" % degree)
         filename = "output/error_cg_%d.dat" % degree
         file = open(filename,"w")
+        
+        # Calculate 'dt' for a better adjustment of the error curve
+        dt = min_h**degree          
+        
         elem = nelem
         for k in range(nsimulations):
             print("---------------------------------------------------------------------------------")
-            print("[!] Solving Allen-Cahn-1D using %d elements" % elem)
-            h, error_L2 = solve_allen_cahn(elem,degree,error_timestep)
+            print("[!] Solving Allen-Cahn-1D using %d elements (dt = %.10lf)" % (elem,dt))
+            h, error_L2 = solve_allen_cahn(elem,degree,error_timestep,dt)
             file.write("%g %g\n" % (h,error_L2))
             elem = elem * 2
             print("---------------------------------------------------------------------------------")
@@ -176,11 +178,14 @@ def unitary_test (argv):
     toler = 5.0e-01
     nelem = int(argv[1])
     nsimulations = int(argv[2])
-    error_timestep = int(argv[3])
+    error_timestep = float(argv[3])
     degrees = [1,2,3]
 
+    # Calculate the 'min_h' in order to set up the 'dt' value
+    min_h = float(nelem / (2**(nsimulations-1)))
+
     # Run all the simulations
-    run_simulations(nelem,nsimulations,error_timestep,degrees)
+    run_simulations(nelem,nsimulations,error_timestep,degrees,min_h)
 
     # Run the Unitary Test
     run_unitary_test(toler,degrees)

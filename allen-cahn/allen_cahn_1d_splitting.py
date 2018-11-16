@@ -14,7 +14,7 @@ tau = 1.0          # parameter tau
 nelem = 32         # Number of elements
 xmin = -2.0         # Inferior limit of the domain
 xmax = 2.0         # Superior limit of the domain
-w0 = 0.5           # Parameter
+w0 = 0.0           # Parameter
 w1 = 0.0           # Parameter
 print_rate = 10    # print rate of the solution
 

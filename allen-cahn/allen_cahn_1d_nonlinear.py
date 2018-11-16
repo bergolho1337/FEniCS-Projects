@@ -34,7 +34,7 @@ M = 1.0             # Diffusive factor
 xmin = -2.0         # Limits of the interval
 xmax = 2.0          # Limits of the interval
 nelem = 32         # Number of finite elements to use
-w0 = 0.5            # Weight related to the free-energy density
+w0 = 0.0            # Weight related to the free-energy density
 w1 = 0.0            # Weight related to the free-energy density
 timestep_plot = 0 # Timestep of the plot
 print_rate = 10     # Rate which the VTU file will be saved
@@ -188,10 +188,10 @@ def compute_analitical ():
     analit_file.close()
 
 def plot_aprox_timestep (x,data_aprox,timestep_plot):
-    plt.plot(x,data_aprox[timestep_plot][1:],label="aprox-%d" % timestep_plot,linestyle='--')
+    plt.plot(x,data_aprox[timestep_plot][1:],label="t = %.3lf" % float(timestep_plot*dt),linestyle='--')
 
 def plot_analit_timestep (x,data_analit,timestep_plot):
-    plt.plot(x,data_analit[timestep_plot][1:],label="analit-%d" % timestep_plot,linestyle='-')
+    plt.plot(x,data_analit[timestep_plot][1:],label="t = %.3lf" % float(timestep_plot*dt),linestyle='-')
 
 def compare_aproximation_timesteps ():
     
@@ -215,8 +215,8 @@ def compare_analitical_timesteps ():
     # Get the data
     data_analit = np.genfromtxt("output/analit.dat")
     x = np.linspace(xmin,xmax,nelem+1)
-    #timesteps = [1,100,1000,1999]
-    timesteps = [1,1000,10000,19999]
+    timesteps = [1,100,1000,1999]
+    #timesteps = [1,1000,10000,19999]
 
     plt.clf()
     for k in range(len(timesteps)):
@@ -235,11 +235,11 @@ def compare_aproximation_analitical ():
     data_analit = np.genfromtxt("output/analit.dat")
     data_aprox = np.genfromtxt("output/aprox.dat")
     x = np.linspace(xmin,xmax,nelem+1)
-    t = dt*timestep_plot
+    t = dt*2000
 
     plt.clf()
     plt.plot(x,data_analit[timestep_plot][1:],label="analit",c="red")
-    plt.plot(x,data_aprox[timestep_plot][1:],label="aprox-%d" % timestep_plot,linestyle='--')
+    plt.plot(x,data_aprox[timestep_plot][1:],label="aprox-2000",linestyle='--')
     plt.grid()
     plt.xlabel("x",fontsize=15)
     plt.ylabel("u",fontsize=15)
@@ -253,10 +253,10 @@ def main ():
     set_log_level(50)
 
     compute_aproximation()
-    #compute_analitical()
+    compute_analitical()
     compare_aproximation_timesteps()
-    #compare_analitical_timesteps()
-    #compare_aproximation_analitical()
+    compare_analitical_timesteps()
+    compare_aproximation_analitical()
 
 if __name__ == "__main__":
     main()

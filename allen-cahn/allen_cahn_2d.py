@@ -16,9 +16,9 @@ from mpl_toolkits.mplot3d import Axes3D
 from dolfin import *
 
 # Model parameters
-lmbda  = 5.0e-02    # Surface parameter
+lmbda  = 5.0e-04    # Surface parameter
 dt     = 1.0e-03    # Time step
-tmax = 1.0          # Maximum time of the simulation
+tmax = 2.0          # Maximum time of the simulation
 theta  = 0.5        # Time stepping family, e.g. theta=1 -> backward Euler, theta=0.5 -> Crank-Nicolson
 M = 1.0             # Diffusive factor
 nelem = 128         # Number of finite elements to use
