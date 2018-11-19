@@ -1,0 +1,4 @@
+/tmp/tmpiwkuu3yn/dolfin_subdomain_d41d8cd98f00b204e9800998ecf8427e.cpp: In member function ‘virtual bool dolfin::dolfin_subdomain_d41d8cd98f00b204e9800998ecf8427e::inside(Eigen::Ref<const Eigen::Matrix<double, -1, 1> >, bool) const’:
+/tmp/tmpiwkuu3yn/dolfin_subdomain_d41d8cd98f00b204e9800998ecf8427e.cpp:63:10: error: return-statement with no value, in function returning ‘bool’ [-fpermissive]
+          return ;
+          ^~~~~~
